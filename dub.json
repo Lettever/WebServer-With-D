@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Lettever"
+	],
+	"copyright": "Copyright © 2024, Lettever",
+	"description": "webserver with d",
+	"license": "MIT",
+	"name": "webserver-with-d"
+}
