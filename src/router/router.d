@@ -5,10 +5,11 @@ import std.typecons;
 
 alias HTTP_req = string;
 alias Route = string;
-alias Render_fn = string function();
+alias Render_Fn = string function();
+
 class Router {
-    Render_fn[Route][HTTP_req] routes;
-    void add(HTTP_req req, Route route, Render_fn fn) {
+    Render_Fn[Route][HTTP_req] routes;
+    void add(HTTP_req req, Route route, Render_Fn fn) {
         HTTP_req a = req.toUpper();
         if(a in routes && route in routes[a]) {
             writefln("overiding function (%s, %s)", a, route);

@@ -37,9 +37,13 @@ void main() {
         Socket client = server_socket.accept();
         try {
             client.receive(req);
-            client.send(handle_request2(req));
         } catch(Exception e) {
-            writeln("> " ~ e.msg ~ " <");
+            writeln("1 > " ~ e.msg ~ " <");
+        }
+        try {
+            client.send(handle_request2(req));
+        } catch (Exception e) {
+            writeln("2 > " ~ e.msg ~ " <");
         }
         client.close();
     }
@@ -58,7 +62,7 @@ string handle_request2(Req req) {
     writeln("header: ", header.first_line);
     string foo = "function foo() {
         fetch('/clicked', {
-        method: 'FOO',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -87,7 +91,7 @@ string handle_request2(Req req) {
             </body>
             </html>
         };
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" ~ html.format(url[1 .. $], foo);
+        return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" ~ html.format(url[1 .. $], foo));
     }
     return handle_request(req);
 }

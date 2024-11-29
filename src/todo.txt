@@ -1,0 +1,1 @@
+convert the functions that send responses to byte[] instead of string
