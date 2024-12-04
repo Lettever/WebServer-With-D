@@ -7,6 +7,7 @@ struct Logger {
     string message;
     int level;
 }
+
 @Logger("test1", 2)
 void function1() {
     writeln("function 1");
@@ -19,9 +20,8 @@ void function2() {
 }
 
 void tryAndLog(void function() fn) {
-    Logger log;
     static if(hasUDA!(fn, Logger)) {
-        log = getUDAs!(fn, Logger)[0];
+        Logger log = getUDAs!(fn, Logger)[0];
         try {
             fn();
         } catch (Exception e) {
@@ -29,6 +29,8 @@ void tryAndLog(void function() fn) {
             writeln(e.message);
             writeln(e.msg);
         }
+    } else {
+        writeln("noone");
     }
 }
 void tryAndLog2() {
@@ -51,38 +53,16 @@ void tryAndLog1() {
         try {
             function1();
         } catch (Exception e) {
-            writeln(log);
-            writeln(e.message);
-            writeln(e.msg);
+            write("log: ");writeln(log);
+            writeln("Message: " ~ e.message);
+            writeln("Msg: " ~ e.msg);
         }
     }
 }
 
-// Define a custom UDA
-struct MyAttribute {
-    string description;
-    int level;
-}
-
-// Attach UDA to a function
-@MyAttribute("This is a special function", 1)
-void myFunction() {
-    writeln("Hello from myFunction!");
-}
-
 void main() {
-    // Call the function
     tryAndLog(&function1);
-    tryAndLog(&function2);
-    tryAndLog1();
-    tryAndLog2();
-    
-    myFunction();
-    static if (hasUDA!(myFunction, MyAttribute)) {
-        writeln("myFunction has MyAttribute UDA!");
-        MyAttribute attr = getUDAs!(myFunction, MyAttribute)[0];
-        writeln(attr);
-        writeln(attr.description);
-        writeln(attr.level);
-    }
+    tryAndLog(function2);
+    //tryAndLog1();
+    //tryAndLog2();
 }

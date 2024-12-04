@@ -3,14 +3,19 @@ import std.uni;
 import std.stdio;
 import std.typecons;
 
-alias HTTP_req = string;
+alias HTTPReq = string;
 alias Route = string;
-alias Render_Fn = string function();
-
+alias RenderFn = string function();
+/*
+    route examples:
+        /index/foo
+        /users/:id/
+        id can be anything
+*/
 class Router {
-    Render_Fn[Route][HTTP_req] routes;
-    void add(HTTP_req req, Route route, Render_Fn fn) {
-        HTTP_req a = req.toUpper();
+    RenderFn[Route][HTTPReq] routes;
+    void add(HTTPReq req, Route route, RenderFn fn) {
+        HTTPReq a = req.toUpper();
         if(a in routes && route in routes[a]) {
             writefln("overiding function (%s, %s)", a, route);
         }

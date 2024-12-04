@@ -1,5 +1,5 @@
 import std;
-import router;
+import utils;
 
 alias Req = char[65536];
 struct Header {
@@ -15,9 +15,12 @@ string a() {
 }
 
 void main() {
-    /*for(int i = 0; i < 100; i++) {
-        writef("key%s: 'value%s',", i, i);
-    }*/
+    writeln(formatString("Hello $(name)", ["name": "Joe"]));
+    writeln(formatString("Hello $$(name)", ["name": "Joe"]));
+    writeln(formatString("Hello $$$(name)", ["name": "Joe"]));
+    writeln(formatString("$(name) $$$(age)", ["name":"a", "age": "20"]));
+    return;
+    int cnt = 0;
     const server_host = "0.0.0.0";
     const server_port = 8080;
     auto server_socket = new Socket(AddressFamily.INET, SocketType.STREAM);
@@ -27,24 +30,18 @@ void main() {
     server_socket.bind(addr);
     server_socket.listen(1);
     writefln("Listening on - http://localhost:%s/", server_port);
-    auto r = new Router();
-    r.add("get", "/", &a);
-    r.add("get", "/", &a);
-    writeln(r.routes);
-    //return;
+    
     while(true) {
         Req req;
         Socket client = server_socket.accept();
-        try {
-            client.receive(req);
-        } catch(Exception e) {
-            writeln("1 > " ~ e.msg ~ " <");
-        }
+        cnt += 1;
+        client.receive(req);
         try {
             client.send(handle_request2(req));
         } catch (Exception e) {
-            writeln("2 > " ~ e.msg ~ " <");
+            writeln("> " ~ e.msg ~ " <");
         }
+        writeln(cnt);
         client.close();
     }
 }
@@ -100,9 +97,7 @@ Header parse_header(Req req) {
     auto a = req.to!string.split("\r\n\r\n");
     string[] header = a[0].split("\r\n");
     string[] first_line = header[0].split();
-    char a1 = 0xFF;
-    char a2 = 0x00;
-    string body = a[1];//.to!(char[]).replace(a1, '-').to!(string);
+    string body = a[1];
     string[string] values;
     foreach(line; header[1 .. $]) {
         auto w = line.findSplit(":");
