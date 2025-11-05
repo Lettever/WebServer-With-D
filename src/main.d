@@ -105,7 +105,7 @@ Header parseHeader(string request) {
     return header;
 }
 
-void parseRequestLine(ref Header header, string line) {
+Header parseRequestLine(ref Header header, string line) {
     string[] requestLineParts = line.split();
     if (requestLineParts.length >= 3) {
         header.method = requestLineParts[0];
@@ -114,9 +114,10 @@ void parseRequestLine(ref Header header, string line) {
     } else {
         stderr.writeln("Malformed request line: ", line);
     }
+    return header;
 }
 
-void parseHeaders(ref Header header, string[] headerLines) {
+Header parseHeaders(ref Header header, string[] headerLines) {
     foreach (line; headerLines[1..$]) {
         auto colonPos = line.indexOf(':');
         if (colonPos != -1) {
@@ -127,6 +128,7 @@ void parseHeaders(ref Header header, string[] headerLines) {
             stderr.writeln("Malformed header line: ", line);
         }
     }
+    return header;
 }
 
 string handleRequest(string request) {
