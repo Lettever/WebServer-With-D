@@ -1,108 +1,167 @@
 import std;
-import utils;
 
-alias Req = char[65536];
 struct Header {
-    string[] first_line;
-    string[string] values;
+    string method;
+    string url;
+    string _version;
+    string[string] fields;
     string body;
-    string HTTP_type() => first_line[0];
-    string url() => first_line[1];
 }
 
-string a() {
-    return q{<h1>Hello</h1>};
-}
+int counter = 0;
 
 void main() {
-    writeln(formatString("Hello $(name)", ["name": "Joe"]));
-    writeln(formatString("Hello $$(name)", ["name": "Joe"]));
-    writeln(formatString("Hello $$$(name)", ["name": "Joe"]));
-    writeln(formatString("$(name) $$$(age)", ["name":"a", "age": "20"]));
-    return;
-    int cnt = 0;
-    const server_host = "0.0.0.0";
-    const server_port = 8080;
+    immutable server_host = "0.0.0.0";
+    immutable server_port = 8080;
     auto server_socket = new Socket(AddressFamily.INET, SocketType.STREAM);
-    scope(exit) { server_socket.close(); }
+    scope(exit) server_socket.close();
     server_socket.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, 1);
     Address addr = getAddress(server_host, server_port)[0];
     server_socket.bind(addr);
-    server_socket.listen(1);
+    server_socket.listen(4);
     writefln("Listening on - http://localhost:%s/", server_port);
     
     while(true) {
-        Req req;
         Socket client = server_socket.accept();
-        cnt += 1;
-        client.receive(req);
+        scope(exit) client.close();
         try {
-            client.send(handle_request2(req));
-        } catch (Exception e) {
-            writeln("> " ~ e.msg ~ " <");
+            auto request = readHttpRequest(client);
+            if (!request.empty) {
+                auto response = handleRequest(request);
+                client.send(response);
+            }
+        } catch(Exception e) {
+            stderr.writeln("Error handling request: ", e.msg);
         }
-        writeln(cnt);
-        client.close();
     }
 }
 
-string handle_request(Req req) {
-    string res = "HTTP/1.1 200 OK\r\n";
-    string json = q{"{name: 'foo', age: 10, cool: false}"};
-    res ~= "Content-Length: %s\r\n\r\n".format(json.length);
-    res ~= json;
-    return res;
+string readHttpRequest(Socket client) {
+    ubyte[65536] buffer;
+    string request;
+    
+    auto received = client.receive(buffer);
+    if (received <= 0) return "";
+    
+    request = cast(string)buffer[0..received];
+    
+    auto headerEnd = request.indexOf("\r\n\r\n");
+    if (headerEnd == -1) {
+        // Malformed request - no header terminator
+        return request;
+    }
+    
+    headerEnd += 4;
+    
+    if (request.startsWith("POST")) {
+        int contentLength = 0;
+        auto contentLengthPos = request.indexOf("Content-Length:");
+        if (contentLengthPos != -1) {
+            auto lineEnd = request.indexOf("\r\n", contentLengthPos);
+            if (lineEnd != -1) {
+                auto clHeader = request[contentLengthPos..lineEnd];
+                auto parts = clHeader.split(":");
+                if (parts.length >= 2) {
+                    contentLength = parts[1].strip().to!int;
+                }
+            }
+        }
+        
+        auto bodyReadSoFar = cast(int)(request.length - headerEnd);
+        
+        if (bodyReadSoFar < contentLength) {
+            int remaining = contentLength - bodyReadSoFar;
+            
+            while (remaining > 0) {
+                auto bytesRead = client.receive(buffer);
+                if (bytesRead <= 0) break;
+                
+                auto take = min(bytesRead, remaining);
+                request ~= cast(string)buffer[0..take];
+                remaining -= take;
+            }
+        }
+    }
+    
+    return request;
 }
 
-string handle_request2(Req req) {
-    Header header = parse_header(req);
-    writeln("header: ", header.first_line);
-    string foo = "function foo() {
-        fetch('/clicked', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            key0: 'value0',key1: 'value1',key2: 'value2',key3: 'value3',key4: 'value4',key5: 'value5',key6: 'value6',key7: 'value7',key8: 'value8',key9: 'value9',key10: 'value10',key11: 'value11',key12: 'value12',key13: 'value13',key14: 'value14',key15: 'value15',key16: 'value16',key17: 'value17',key18: 'value18',key19: 'value19',key20: 'value20',key21: 'value21',key22: 'value22',key23: 'value23',key24: 'value24',key25: 'value25',key26: 'value26',key27: 'value27',key28: 'value28',key29: 'value29',key30: 'value30',key31: 'value31',key32: 'value32',key33: 'value33',key34: 'value34',key35: 'value35',key36: 'value36',key37: 'value37',key38: 'value38',key39: 'value39',key40: 'value40',key41: 'value41',key42: 'value42',key43: 'value43',key44: 'value44',key45: 'value45',key46: 'value46',key47: 'value47',key48: 'value48',key49: 'value49',key50: 'value50',key51: 'value51',key52: 'value52',key53: 'value53',key54: 'value54',key55: 'value55',key56: 'value56',key57: 'value57',key58: 'value58',key59: 'value59',key60: 'value60',key61: 'value61',key62: 'value62',key63: 'value63',key64: 'value64',key65: 'value65',key66: 'value66',key67: 'value67',key68: 'value68',key69: 'value69',key70: 'value70',key71: 'value71',key72: 'value72',key73: 'value73',key74: 'value74',key75: 'value75',key76: 'value76',key77: 'value77',key78: 'value78',key79: 'value79',key80: 'value80',key81: 'value81',key82: 'value82',key83: 'value83',key84: 'value84',key85: 'value85',key86: 'value86',key87: 'value87',key88: 'value88',key89: 'value89',key90: 'value90',key91: 'value91',key92: 'value92',key93: 'value93',key94: 'value94',key95: 'value95',key96: 'value96',key97: 'value97',key98: 'value98',key99: 'value99'
-        })
-        })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error('Error:', error));
-    }";
-    if(header.HTTP_type() == "GET") {
-        string url = header.url();
-        string html = q{
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Hello</title>
-            </head>
-            <body>
-                <button onclick="foo()">Click me</button>
-                <h1>Hello /<span style="text-decoration: underline">%s</h1>
-                <script>
-                    %s
-                </script>
-            </body>
-            </html>
-        };
-        return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" ~ html.format(url[1 .. $], foo));
+Header parseHeader(string request) {
+    Header header;
+    
+    string[] parts = request.split("\r\n\r\n");
+    if (parts.length < 1) return header;
+    
+    string[] headerLines = parts[0].split("\r\n");
+    if (headerLines.length < 1) return header;
+    
+    parseRequestLine(header, headerLines[0]);    
+    parseHeaders(header, headerLines);
+    
+    if (parts.length >= 2) {
+        header.body = parts[1];
     }
-    return handle_request(req);
+    
+    return header;
 }
 
-Header parse_header(Req req) {
-    auto a = req.to!string.split("\r\n\r\n");
-    string[] header = a[0].split("\r\n");
-    string[] first_line = header[0].split();
-    string body = a[1];
-    string[string] values;
-    foreach(line; header[1 .. $]) {
-        auto w = line.findSplit(":");
-        w[2] = w[2].chompPrefix(" ");
-        values[w[0]] = w[2];
+void parseRequestLine(ref Header header, string line) {
+    string[] requestLineParts = line.split();
+    if (requestLineParts.length >= 3) {
+        header.method = requestLineParts[0];
+        header.url = requestLineParts[1];
+        header._version = requestLineParts[2];
+    } else {
+        stderr.writeln("Malformed request line: ", line);
     }
-    return Header(first_line, values, body);
+}
+
+void parseHeaders(ref Header header, string[] headerLines) {
+    foreach (line; headerLines[1..$]) {
+        auto colonPos = line.indexOf(':');
+        if (colonPos != -1) {
+            string key = line[0..colonPos].strip();
+            string value = line[colonPos + 1..$].strip();
+            header.fields[key] = value;
+        } else if (!line.strip.empty) {
+            stderr.writeln("Malformed header line ", i + 2, ": ", line);
+        }
+    }
+}
+
+string handleRequest(string request) {
+    auto header = parseHeader(request);
+    
+    if (header.method == "GET") return handleGetRequest(header);
+    if (header.method == "POST") return handlePostRequest(header);
+    return "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
+}
+
+string handleGetRequest(Header header) {
+    writeln("GET received: ", header.url);
+    if (header.url == "/counter") {
+        string text = readText("./counter.html");
+        return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" ~ text.format(counter);
+    }
+    
+    string html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Hello</title>
+        </head>
+        <body>
+            <h1>Hello /<span style="text-decoration: underline">%s</span></h1>
+        </body>
+        </html>
+    `;
+    
+    string url = header.url.length > 1 ? header.url[1..$] : "";
+    return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" ~ html.format(url);
+}
+
+string handlePostRequest(Header header) {
+    writeln("POST received: ", header.url);
+    writeln("POST body: ", header.body);
+    return "";
 }
