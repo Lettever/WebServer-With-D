@@ -25,7 +25,7 @@ void main() {
         Socket client = server_socket.accept();
         scope(exit) client.close();
         try {
-            auto request = readHttpRequest(client);
+            string request = readHttpRequest(client);
             if (!request.empty) {
                 auto response = handleRequest(request);
                 client.send(response);
@@ -124,7 +124,7 @@ void parseHeaders(ref Header header, string[] headerLines) {
             string value = line[colonPos + 1..$].strip();
             header.fields[key] = value;
         } else if (!line.strip.empty) {
-            stderr.writeln("Malformed header line ", i + 2, ": ", line);
+            stderr.writeln("Malformed header line: ", line);
         }
     }
 }
